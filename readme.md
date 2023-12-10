@@ -26,8 +26,11 @@ secretcli query compute list-contract-by-code 1
     secretcli tx compute execute secret1adrmc3yxe0c2rwgw7w07v27nz6ad6wdr3amez0 '{"set_user_vector": {"value": 42}}' --from myWallet --gas 1000000 --gas-prices=1uscrt
     #see what is in X
     secretcli query compute query secret1adrmc3yxe0c2rwgw7w07v27nz6ad6wdr3amez0  '{"get_user_vector": {}}'
+    #set A only by admin
+    secretcli tx compute execute secret1adrmc3yxe0c2rwgw7w07v27nz6ad6wdr3amez0 '{"set_a
+    dmin_vector": {"admin_vector": [1, 2, 3, 4]}}' --from myWallet --gas 200000 --gas-prices=0.25uscrt --broadcast-mode block
     #see what is in A
-    secretcli query compute query secret1adrmc3yxe0c2rwgw7w07v27nz6ad6wdr3amez0  '{"get_A_vector": {}}'
+    secretcli query compute query secret1adrmc3yxe0c2rwgw7w07v27nz6ad6wdr3amez0  '{"get_admin_vector": {}}'
     #Reset the Average variable:
     secretcli tx compute execute secret1adrmc3yxe0c2rwgw7w07v27nz6ad6wdr3amez0 '{"reset": {}}' --from FakeWallet --gas 1000000 --gas-prices=1uscrt
 
