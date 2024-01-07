@@ -24,6 +24,8 @@ const customFees = {
 };
 
 async function uploadContract() {
+  const startTime = performance.now(); // Record start time
+
   try {
     let tx = await secretjs.tx.compute.storeCode(
       {
@@ -69,15 +71,17 @@ async function uploadContract() {
     console.log("tx", ty);
   
     //Find the contract_address in the logs
-    const contractAddress = ty.arrayLog.find(
+    let contractAddress = ty.arrayLog.find(
       (log) => log.type === "message" && log.key === "contract_address"
     ).value;
-  
     console.log(contractAddress);
+
   } catch (error) {
     console.error('Error in uploadContract:', error);
   }
+  const endTime = performance.now(); // Record end time
+
+  const executionTime = endTime - startTime
+  console.log(`Transaction took ${executionTime} milliseconds to complete`);
 }
-
-uploadContract();
-
+uploadContract() ;

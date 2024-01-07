@@ -10,17 +10,18 @@ const secretjs = new SecretNetworkClient({
   wallet: wallet,
   walletAddress: wallet.address,
 });
-let dotAX = async () => {
+
+let getlegit = async () => {
   const startTime = performance.now(); // Record start time
 
   const my_query = await secretjs.query.compute.queryContract({
     contract_address: contract_address,
     code_hash:
-      code_hashs,
-    query: { get_dot_product: {} },
+      code_hash,
+    query: { get_legit_vector: {} },
   });
-
-  console.log(atob(my_query)) ; 
+  console.log(contract_address) ; 
+  console.log(atob(my_query));
   const endTime = performance.now(); // Record end time
 
   const executionTime = endTime - startTime
@@ -28,4 +29,4 @@ let dotAX = async () => {
 
 };
 
-dotAX();
+getlegit();
