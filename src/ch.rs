@@ -1,26 +1,24 @@
+use cosmwasm_std::Addr;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
-
-use crate::msg::{StrResponse,CountResponse,DotProductResponse,VectorResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{CountResponse,DotProductResponse,VectorResponse, ExecuteMsg, InstantiateMsg, QueryMsg,StrResponse};
 use crate::state::{config, config_read, State};
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: InstantiateMsg,
+    deps: DepsMut,  // It provides functionalities to interact with the contract's storage,
+    _env: Env, //The Env variable contains information about the current execution environment, including details such as the block time, block height, chain ID
+    info: MessageInfo,   //his variable contains information about the message that triggered the execution of the contract function. It includes details such as the sender's address (info.sender
+    msg: InstantiateMsg,  //This variable represents the instantiation message used when the contract is deployed for the first time. It contains specific information required to initialize the contract state, such as initial configuration parameters or values.
 ) -> StdResult<Response> {
     let state = State {
-        count: msg.count,
         owner: info.sender.clone(),
-        a_vector: vec![],
+        admin_vector: vec![],
         x_vector: vec![],
         legit: vec![(info.sender.clone()).to_string()],
-
 };
-
+    println!("owner address: {:p}", &state.owner as *const Addr);
     deps.api
         .debug(format!("Contract was initialized by {}", info.sender).as_str());
     config(deps.storage).save(&state)?;
@@ -30,63 +28,23 @@ pub fn instantiate(
 
 #[entry_point]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
-    let state = config(deps.storage).load()?; // Load the state from storage
+        let state = config(deps.storage).load()?; // Load the state from storage
 
     // Check if the sender is not in the 'legit' vector in the state
     if !state.legit.contains(&(info.sender).to_string()) {
         return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
     }
     match msg {
-        ExecuteMsg::Increment {} => try_increment(deps, env),
-        ExecuteMsg::Reset { count } => try_reset(deps, info, count),
         ExecuteMsg::ResetX {} => try_reset_X(deps, info),
         ExecuteMsg::ResetAdmin {} => try_reset_A(deps, info),
         ExecuteMsg::ResetLegit {} => try_reset_legit(deps, info),
-        ExecuteMsg::SetUserVector {vector} => try_set_user_vector(deps, env, vector),
-        ExecuteMsg::SetAdminVector {a_vector} => try_set_a_vector(deps,a_vector),
+        ExecuteMsg::SetUserVector {value} => try_set_user_vector(deps, env, value),
+        ExecuteMsg::SetAdminVector {admin_vector} => try_set_admin_vector(deps,info,admin_vector),
         ExecuteMsg::SetLegitimUsers {address}  => try_set_legitim_users(deps,info,address),
     }
 }
 
-pub fn try_increment(deps: DepsMut, _env: Env) -> StdResult<Response> {
-    config(deps.storage).update(|mut state| -> Result<_, StdError> {
-        state.count += 1;
-        Ok(state)
-    })?;
 
-    deps.api.debug("count incremented successfully");
-    Ok(Response::default())
-}
-
-pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Response> {
-    let sender_address = info.sender.clone();
-    config(deps.storage).update(|mut state| {
-        if sender_address != state.owner {
-            return Err(StdError::generic_err("Only the owner can reset count"));
-        }
-        state.count = count;
-        Ok(state)
-    })?;
-
-    deps.api.debug("count reset successfully");
-    Ok(Response::default())
-}
-pub fn try_set_legitim_users(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
-    let state = config(deps.storage).load()?;
-    
-    // Check if the message sender is the admin (owner)
-    if info.sender != state.owner {
-        return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
-    }
-
-    config(deps.storage).update(|mut state| -> Result<_, StdError> {
-        state.legit.push(address);
-        Ok(state)
-    })?;
-
-    deps.api.debug("Legit reset successfully");
-    Ok(Response::default())
-}
 
 pub fn try_reset_X(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     let sender_address = info.sender.clone();
@@ -107,7 +65,7 @@ pub fn try_reset_A(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
         if sender_address != state.owner {
             return Err(StdError::generic_err("Only the owner can reset count"));
         }
-        state.a_vector = Vec::new();
+        state.admin_vector = Vec::new();
         Ok(state)
     })?;
 
@@ -120,48 +78,75 @@ pub fn try_reset_legit(deps: DepsMut, info: MessageInfo) -> StdResult<Response> 
         if sender_address != state.owner {
             return Err(StdError::generic_err("Only the owner can reset count"));
         }
-        state.legit = vec![info.sender.clone().to_string()];
+        state.legit = Vec::new();
         Ok(state)
     })?;
 
-    deps.api.debug("auth reset successfully");
+    deps.api.debug("A reset successfully");
     Ok(Response::default())
 }
 
-pub fn try_set_a_vector(deps: DepsMut, a_vector: Vec<i32>) -> StdResult<Response> {
+
+pub fn try_set_legitim_users(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
+    let state = config(deps.storage).load()?;
+    
+    // Check if the message sender is the admin (owner)
+    if info.sender != state.owner {
+        return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
+    }
+
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        state.legit.push(address);
+        Ok(state)
+    })?;
+
+    deps.api.debug("Legit reset successfully");
+    Ok(Response::default())
+}
+
+
+
+pub fn try_set_admin_vector(deps: DepsMut, info: MessageInfo, admin_vector: Vec<i32>) -> StdResult<Response> {
     let mut state = config(deps.storage).load()?;
     
+    // Check if the message sender is the admin (owner)
+    if info.sender != state.owner {
+        return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
+    }
+
     // Update the admin vector in the contract state
-    state.a_vector = a_vector;
+    state.admin_vector = admin_vector;
     config(deps.storage).save(&state)?;
 
     deps.api.debug("Admin vector set successfully");
     Ok(Response::default())
 }
 
-pub fn try_set_user_vector(deps: DepsMut, _env: Env, vector: Vec<i32>) -> StdResult<Response> {
-    let mut state = config(deps.storage).load()?;
-    state.x_vector = vector;
-    config(deps.storage).save(&state)?;
+pub fn try_set_user_vector(deps: DepsMut, _env: Env, value: i32) -> StdResult<Response> {
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        state.x_vector.push(value);
+        Ok(state)
+    })?;
 
-    deps.api.debug("x vector set successfully");
+    deps.api.debug("value added to array successfully");
     Ok(Response::default())
+}
+
+#[entry_point]
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetAdminVector {} => to_binary(&query_admin_vector(deps)?),
+        QueryMsg::GetDotProduct {} => to_binary(&query_dot_product(deps)?),
+        QueryMsg::GetUserVector {} => to_binary(&query_user_vector(deps)?),
+        QueryMsg::GetLegitVector {} => to_binary(&query_legitim_user(deps)?),
+    }
 }
 
 
 
-#[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg ) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
-        QueryMsg::GetAdminVector {} => to_binary(&query_a_vector(deps)?),
-        QueryMsg::GetDotProduct {} => to_binary(&query_dot_product(deps)?),
-        QueryMsg::GetUserVector {} => to_binary(&query_user_vector(deps)?),
-        QueryMsg::GetLegitVector {} => to_binary(&query_legitim_user(deps)?),
 
-    
-    }
-}fn query_legitim_user(deps: Deps) -> StdResult<Binary> {
+// Use serde_json or another format to serialize your struct into a Vec<u8>
+fn query_legitim_user(deps: Deps) -> StdResult<Binary> {
     let state = config_read(deps.storage).load()?;
    // if info.sender != state.owner {
        // return Err(StdError::generic_err("Only the contract owner can get the admin vector"));
@@ -172,16 +157,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg ) -> StdResult<Binary> {
 
     Ok(Binary(json))
 }
-
-fn query_count(deps: Deps) -> StdResult<Binary> {
+fn query_admin_vector(deps: Deps) -> StdResult<Binary> {
     let state = config_read(deps.storage).load()?;
-    let response = CountResponse { count: state.count };
-    to_binary(&response)
-}
-
-fn query_a_vector(deps: Deps) -> StdResult<Binary> {
-    let state = config_read(deps.storage).load()?;
-    let response:   VectorResponse= VectorResponse { vector: state.a_vector };
+    //if info.sender != state.owner  {
+      //  return Err(StdError::generic_err("Only the contract owner cans get the admin vector"));
+    //}
+    let response:   VectorResponse= VectorResponse { vector: state.admin_vector };
     to_binary(&response)
 }
 fn query_user_vector(deps: Deps) -> StdResult<Binary> {
@@ -192,15 +173,17 @@ fn query_user_vector(deps: Deps) -> StdResult<Binary> {
 
 fn query_dot_product(deps: Deps) -> StdResult<Binary> {
     let state = config_read(deps.storage).load()?;
-    
+   // if info.sender != state.owner {
+       // return Err(StdError::generic_err("Only the contract owner can get the admin vector"));
+   // }
     // Ensure both vectors are initialized and have the same length
-    if state.a_vector.is_empty() || state.x_vector.is_empty() ||
-        state.a_vector.len() != state.x_vector.len() {
+    if state.admin_vector.is_empty() || state.x_vector.is_empty() ||
+        state.admin_vector.len() != state.x_vector.len() {
         return Err(StdError::generic_err("Invalid vectors for dot product calculation"));
     }
 
     // Calculate the dot product
-    let dot_product = calculate_dot_product(&state.a_vector, &state.x_vector);
+    let dot_product = calculate_dot_product(&state.admin_vector, &state.x_vector);
 
     let response = DotProductResponse { dot_product };
     to_binary(&response)

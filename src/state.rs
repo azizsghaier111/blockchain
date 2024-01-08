@@ -10,8 +10,9 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct State {
     pub count: i32,
     pub owner: Addr,
-    pub admin_vector: Vec<i32>,
+    pub a_vector: Vec<i32>,
     pub x_vector: Vec <i32>,
+    pub legit: Vec <String>,
 
 }
 
