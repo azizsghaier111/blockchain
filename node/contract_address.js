@@ -1,4 +1,4 @@
-const contract_address = "secret1gmrtytam5htq5nd5w2klhjgu3lmscru2zr6dw5";
-const code_hash = "609a1fef74265a84aeee963dce1374f6cd8e2f1635572c59d88b51692a0ebacc"; 
+const contract_address = "secret1za6j04w0kep87ks89zmurt3rhxzqhytsn0ysx9";
+const code_hash = "b164e603f1bb138153314738c13bbbf80c6371e0e86765bb09c746836e203e7f"; 
 
 export { contract_address, code_hash };

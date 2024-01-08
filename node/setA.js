@@ -1,7 +1,7 @@
 import { SecretNetworkClient, Wallet } from "secretjs";
 import dotenv from "dotenv";
 import fs from "fs/promises";
-import { contract_address, code_hash } from './contract_address.js' ; 
+import { contract_address, code_hash } from './contract_address.js';
 dotenv.config();
 
 const wallet = new Wallet(process.env.MNEMONIC);
@@ -17,7 +17,7 @@ const secretjs = new SecretNetworkClient({
 
 const args = process.argv.slice(2);
 console.log('Input arguments:', args);
-let vector = JSON.parse(args[0]);
+let vector = args.map(Number);
 
 console.log('Parsed vector:', vector);
 
@@ -31,7 +31,7 @@ const setAdminVector = async () => {
         contract_address: contract_address,
         code_hash: code_hash,
         msg: {
-          set_admin_vector: { admin_vector: vector.filter(value => value !== null) },
+          set_admin_vector: { admin_vector: vector.filter(value => !isNaN(value)) },
         },
         sentFunds: [],
       },
@@ -51,5 +51,4 @@ const setAdminVector = async () => {
 
 };
 
-
-   setAdminVector();
+setAdminVector() ;

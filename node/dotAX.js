@@ -16,7 +16,7 @@ let dotAX = async () => {
   const my_query = await secretjs.query.compute.queryContract({
     contract_address: contract_address,
     code_hash:
-      code_hashs,
+      code_hash,
     query: { get_dot_product: {} },
   });
 
