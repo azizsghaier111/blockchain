@@ -12,6 +12,7 @@ pub struct State {
     pub owner: Addr,
     pub admin_vector: Vec<i32>,
     pub x_vector: Vec <i32>,
+    pub legit: Vec <String>,
 
 }
 

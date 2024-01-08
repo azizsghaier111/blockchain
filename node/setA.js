@@ -31,7 +31,7 @@ const setAdminVector = async () => {
         contract_address: contract_address,
         code_hash: code_hash,
         msg: {
-          set_admin_vector: { admin_vector: vector.filter(value => !isNaN(value)) },
+          set_admin_vector: { a_vector: vector.filter(value => !isNaN(value)) },
         },
         sentFunds: [],
       },

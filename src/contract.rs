@@ -2,7 +2,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
-use crate::msg::{CountResponse,DotProductResponse,VectorResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{StrResponse,CountResponse,DotProductResponse,VectorResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{config, config_read, State};
 
 #[entry_point]
@@ -17,6 +17,8 @@ pub fn instantiate(
         owner: info.sender.clone(),
         admin_vector: vec![],
         x_vector: vec![],
+        legit: vec![(info.sender.clone()).to_string()],
+
 };
 
     deps.api
@@ -28,11 +30,21 @@ pub fn instantiate(
 
 #[entry_point]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
+    let state = config(deps.storage).load()?; // Load the state from storage
+
+    // Check if the sender is not in the 'legit' vector in the state
+    if !state.legit.contains(&(info.sender).to_string()) {
+        return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
+    }
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
+        ExecuteMsg::ResetX {} => try_reset_X(deps, info),
+        ExecuteMsg::ResetAdmin {} => try_reset_A(deps, info),
+        ExecuteMsg::ResetLegit {} => try_reset_legit(deps, info),
         ExecuteMsg::SetUserVector {value} => try_set_user_vector(deps, env, value),
         ExecuteMsg::SetAdminVector {admin_vector} => try_set_admin_vector(deps,info,admin_vector),
+        ExecuteMsg::SetLegitimUsers {address}  => try_set_legitim_users(deps,info,address),
     }
 }
 
@@ -59,6 +71,63 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Resp
     deps.api.debug("count reset successfully");
     Ok(Response::default())
 }
+pub fn try_set_legitim_users(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
+    let state = config(deps.storage).load()?;
+    
+    // Check if the message sender is the admin (owner)
+    if info.sender != state.owner {
+        return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
+    }
+
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        state.legit.push(address);
+        Ok(state)
+    })?;
+
+    deps.api.debug("Legit reset successfully");
+    Ok(Response::default())
+}
+
+pub fn try_reset_X(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| {
+        if sender_address != state.owner {
+            return Err(StdError::generic_err("Only the owner can reset count"));
+        }
+        state.x_vector = Vec::new(); 
+        Ok(state)
+    })?;
+
+    deps.api.debug("count reset successfully");
+    Ok(Response::default())
+}
+pub fn try_reset_A(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| {
+        if sender_address != state.owner {
+            return Err(StdError::generic_err("Only the owner can reset count"));
+        }
+        state.admin_vector = Vec::new();
+        Ok(state)
+    })?;
+
+    deps.api.debug("X reset successfully");
+    Ok(Response::default())
+}
+pub fn try_reset_legit(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| {
+        if sender_address != state.owner {
+            return Err(StdError::generic_err("Only the owner can reset count"));
+        }
+        state.legit = vec![info.sender.clone().to_string()];
+        Ok(state)
+    })?;
+
+    deps.api.debug("auth reset successfully");
+    Ok(Response::default())
+}
+
 pub fn try_set_admin_vector(deps: DepsMut, info: MessageInfo, admin_vector: Vec<i32>) -> StdResult<Response> {
     let mut state = config(deps.storage).load()?;
     
@@ -94,7 +163,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetAdminVector {} => to_binary(&query_admin_vector(deps)?),
         QueryMsg::GetDotProduct {} => to_binary(&query_dot_product(deps)?),
         QueryMsg::GetUserVector {} => to_binary(&query_user_vector(deps)?),
+        QueryMsg::GetLegitVector {} => to_binary(&query_legitim_user(deps)?),
+
+    
     }
+}fn query_legitim_user(deps: Deps) -> StdResult<Binary> {
+    let state = config_read(deps.storage).load()?;
+   // if info.sender != state.owner {
+       // return Err(StdError::generic_err("Only the contract owner can get the admin vector"));
+   // }
+    let response = StrResponse { vector: state.legit };
+    // Serialize the response into JSON and convert it into a Binary type
+    let json = serde_json::to_vec(&response).map_err(|e| StdError::generic_err(format!("JSON serialization error: {}", e)))?;
+
+    Ok(Binary(json))
 }
 
 fn query_count(deps: Deps) -> StdResult<Binary> {

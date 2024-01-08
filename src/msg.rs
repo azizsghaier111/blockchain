@@ -11,8 +11,12 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Increment {},
     Reset { count: i32 },
+    ResetX {},
+    ResetAdmin {},
+    ResetLegit {},
     SetUserVector { value: i32 },
     SetAdminVector { admin_vector: Vec<i32> },
+    SetLegitimUsers{address: String}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -22,6 +26,7 @@ pub enum QueryMsg {
     GetUserVector {},
     GetAdminVector {},
     GetDotProduct {},
+    GetLegitVector{},
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Debug, PartialEq, JsonSchema)]
@@ -33,8 +38,9 @@ pub struct CountResponse {
 pub struct VectorResponse {
     pub vector: Vec<i32>,
 }
-pub struct AdminVectorResponse {
-    pub vector: Vec<i32>,
+#[derive(Serialize)]
+pub struct StrResponse {
+    pub vector: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Debug, PartialEq, JsonSchema)]

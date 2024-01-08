@@ -3,10 +3,10 @@ import * as fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 import { contract_address, code_hash } from './contract_address.js'
-const args = process.argv.slice(2);
+
 
 const wallet = new Wallet(process.env.MNEMONIC);
-const valueToAdd = parseInt(args[0], 10);
+
 
 const contract_wasm = fs.readFileSync("../contract.wasm.gz");
 const secretjs = new SecretNetworkClient({
@@ -15,8 +15,12 @@ const secretjs = new SecretNetworkClient({
   wallet: wallet,
   walletAddress: wallet.address,
 });
+const args = process.argv.slice(2);
+console.log('Input arguments:', args);
+let vector = args.map(Number);
 
-let appendX = async () => {
+console.log('Parsed vector:', vector);
+let setX = async () => {
   const startTime = performance.now(); // Record start time
   
   let tx = await secretjs.tx.compute.executeContract(
@@ -25,7 +29,7 @@ let appendX = async () => {
       contract_address: contract_address,
       code_hash: code_hash, // optional but way faster
       msg: {
-        set_user_vector: { "value": valueToAdd },
+        set_user_vector: { "vector": vector.filter(value => !isNaN(value)) },
       },
       sentFunds: [], // optional
     },
@@ -40,4 +44,4 @@ let appendX = async () => {
   console.log(`Transaction took ${executionTime} milliseconds to complete`);
 };
 
-appendX();
+setX();
