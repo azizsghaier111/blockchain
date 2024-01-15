@@ -43,7 +43,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::ResetAdmin {} => try_reset_A(deps, info),
         ExecuteMsg::ResetLegit {} => try_reset_legit(deps, info),
         ExecuteMsg::SetUserVector {vector} => try_set_user_vector(deps, env, vector),
-        ExecuteMsg::SetAdminVector {a_vector} => try_set_a_vector(deps,a_vector),
+        ExecuteMsg::SetAdminVector {a_vector} => try_set_a_vector(deps,info,a_vector),
         ExecuteMsg::SetLegitimUsers {address}  => try_set_legitim_users(deps,info,address),
     }
 }
@@ -128,9 +128,11 @@ pub fn try_reset_legit(deps: DepsMut, info: MessageInfo) -> StdResult<Response> 
     Ok(Response::default())
 }
 
-pub fn try_set_a_vector(deps: DepsMut, a_vector: Vec<i32>) -> StdResult<Response> {
+pub fn try_set_a_vector(deps: DepsMut, info: MessageInfo, a_vector: Vec<i32>) -> StdResult<Response> {
     let mut state = config(deps.storage).load()?;
     
+    // Check if the message sender is the admin (owner)
+
     // Update the admin vector in the contract state
     state.a_vector = a_vector;
     config(deps.storage).save(&state)?;
@@ -144,7 +146,7 @@ pub fn try_set_user_vector(deps: DepsMut, _env: Env, vector: Vec<i32>) -> StdRes
     state.x_vector = vector;
     config(deps.storage).save(&state)?;
 
-    deps.api.debug("x vector set successfully");
+    deps.api.debug("Admin vector set successfully");
     Ok(Response::default())
 }
 
