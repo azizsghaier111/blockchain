@@ -33,9 +33,9 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     let state = config(deps.storage).load()?; // Load the state from storage
 
     // Check if the sender is not in the 'legit' vector in the state
-    if !state.legit.contains(&(info.sender).to_string()) {
+   /*  if !state.legit.contains(&(info.sender).to_string()) {
         return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
-    }
+    } */
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
@@ -60,13 +60,13 @@ pub fn try_increment(deps: DepsMut, _env: Env) -> StdResult<Response> {
 
 pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Response> {
     let sender_address = info.sender.clone();
-    config(deps.storage).update(|mut state| {
-        if sender_address != state.owner {
-            return Err(StdError::generic_err("Only the owner can reset count"));
-        }
+    let state = config(deps.storage).load()?;
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
         state.count = count;
         Ok(state)
     })?;
+
+
 
     deps.api.debug("count reset successfully");
     Ok(Response::default())
@@ -75,9 +75,9 @@ pub fn try_set_legitim_users(deps: DepsMut, info: MessageInfo, address: String) 
     let state = config(deps.storage).load()?;
     
     // Check if the message sender is the admin (owner)
-    if info.sender != state.owner {
+/*     if info.sender != state.owner {
         return Err(StdError::generic_err("Only the contract owner can set the admin vector"));
-    }
+    } */
 
     config(deps.storage).update(|mut state| -> Result<_, StdError> {
         state.legit.push(address);
@@ -90,23 +90,19 @@ pub fn try_set_legitim_users(deps: DepsMut, info: MessageInfo, address: String) 
 
 pub fn try_reset_X(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     let sender_address = info.sender.clone();
-    config(deps.storage).update(|mut state| {
-        if sender_address != state.owner {
-            return Err(StdError::generic_err("Only the owner can reset count"));
-        }
-        state.x_vector = Vec::new(); 
+    let state = config(deps.storage).load()?;
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        state.x_vector=Vec::new();
         Ok(state)
     })?;
 
-    deps.api.debug("count reset successfully");
+    deps.api.debug("x  reset successfully");
     Ok(Response::default())
 }
 pub fn try_reset_A(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     let sender_address = info.sender.clone();
-    config(deps.storage).update(|mut state| {
-        if sender_address != state.owner {
-            return Err(StdError::generic_err("Only the owner can reset count"));
-        }
+    let state = config(deps.storage).load()?;
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
         state.a_vector = Vec::new();
         Ok(state)
     })?;
